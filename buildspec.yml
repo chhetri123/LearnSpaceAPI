@@ -1,0 +1,23 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:=latest}
+
+  build:
+    commands:
+      - docker build -t ${ECR_REGISTRY}/education-app:${IMAGE_TAG} .
+
+  post_build:
+    commands:
+      - docker push ${ECR_REGISTRY}/education-app:${IMAGE_TAG}
+      - printf '{"ImageURI":"%s"}' ${ECR_REGISTRY}/education-app:${IMAGE_TAG} > imageDefinitions.json
+      - kubectl apply -f k8s/
+
+artifacts:
+  files:
+    - imageDefinitions.json
+    - k8s/*

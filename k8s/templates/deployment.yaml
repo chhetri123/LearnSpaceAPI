@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: education-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: education-app
+  template:
+    metadata:
+      labels:
+        app: education-app
+    spec:
+      containers:
+        - name: education-app
+          image: ${ECR_REGISTRY}/education-app:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: db-host
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
